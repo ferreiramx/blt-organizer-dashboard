@@ -1,107 +1,69 @@
 import streamlit as st
-import snowflake.connector
 import pandas as pd
 import plotly.express as px
+import utils
 
-# Event ID
-EVENT_ID = '201898'
 
-# Snowflake connector parameters
-USER = 'DBT'
-PASSWORD = '3382bPfNx9vSTJGEQc9oK4rR82ReJD'
-ACCOUNT = 'dzb74710.us-east-1'
-WAREHOUSE = 'TRANSFORM'
-DATABASE = 'PROD'
-SCHEMA = 'EVENTS'
-
-ctx = snowflake.connector.connect(
-        user=USER,
-        password=PASSWORD,
-        account=ACCOUNT,
-        warehouse=WAREHOUSE,
-        database=DATABASE,
-        schema=SCHEMA
-        )
-
-cur = ctx.cursor()
+# Sidebar
+st.sidebar.header("Configuración")
+event_id = st.sidebar.text_input("Event ID", "201898")
+event_data = utils.load_event_data(event_id)
+price_threshold = st.sidebar.slider(
+    "% rango de precio", min_value=0.0, max_value=1.0, value=0.1)
 
 # Streamlit page title
-st.title('BOLETIA Google Analytics')
-st.subheader(f'EVENTO: {EVENT_ID}')
+st.title('Dashboard Analítica')
+st.subheader(f"EVENTO: {event_data['NAME']}")
 
-# Function to get the total number of bookings by date
-def load_bookings_by_date():
-    # Execute a query to extract the data
-    sql = f"""select date(paid_at) as fecha, count(booking_id) as compras 
-            from EVENTS.COMPLETED_BOOKINGS 
-            where event_id = {EVENT_ID}
-            group by fecha 
-            order by fecha
-            """
-    cur.execute(sql)
-    # Converting data into a dataframe
-    df = cur.fetch_pandas_all()
-    return df
+st.subheader("Eventos similares")
+similar_events = utils.load_similar_events(event_id, price_threshold)
+st.dataframe(similar_events)
+
+# Columns
+L, R = st.columns(2)
+
 
 # Create visualization for COMPRAS
-st.subheader('Compras')
-data = load_bookings_by_date()
+L.subheader('Compras')
+data = utils.load_bookings_by_date([event_id])
 fig = px.line(data, x="FECHA", y="COMPRAS")
-st.plotly_chart(fig, use_container_width=True)
+L.plotly_chart(fig, use_container_width=True)
+R.subheader('Compras - Eventos similares')
+comp_data = utils.load_bookings_by_date(
+    similar_events["EVENT_ID"].astype(str).values.tolist())
+fig = px.line(comp_data, x="FECHA", y="COMPRAS")
+R.plotly_chart(fig, use_container_width=True)
 
-# Function to get the total number of customers by age bracket
-def load_customers_by_age():
-    # Execute a query to extract the data
-    sql = f"""select *
-                from EVENTS.CUSTOMER_DEMOGRAPHICS_AGE
-                where event_id = {EVENT_ID}
-                order by age_bracket
-                """
-    cur.execute(sql)
-    # Converting data into a dataframe
-    df = cur.fetch_pandas_all()
-    return df
 
 # Create visualization for EDAD
-st.subheader('Edad')
-data = load_customers_by_age()
+L.subheader('Edad')
+data = utils.load_customers_by_age([event_id])
 fig = px.bar(data, y="AGE_BRACKET", x="TOTAL_BOOKINGS", orientation='h')
-st.plotly_chart(fig, use_container_width=True)
+L.plotly_chart(fig, use_container_width=True)
+R.subheader('Edad - Eventos similares')
+comp_data = utils.load_customers_by_age(
+    similar_events["EVENT_ID"].astype(str).values.tolist())
+fig = px.bar(comp_data, y="AGE_BRACKET", x="TOTAL_BOOKINGS", orientation='h')
+R.plotly_chart(fig, use_container_width=True)
 
-# Function to get the total number of customer by gender
-def load_customers_by_gender():
-    # Execute a query to extract the data
-    sql = f"""select *
-                    from EVENTS.CUSTOMER_DEMOGRAPHICS_GENDER
-                    where event_id = {EVENT_ID}
-                    """
-    cur.execute(sql)
-    # Converting data into a dataframe
-    df = cur.fetch_pandas_all()
-    return df
 
 # Create visualization for GENERO
-st.subheader('Genero')
-data = load_customers_by_gender()
+L.subheader('Genero')
+data = utils.load_customers_by_gender([event_id])
 fig = px.pie(data, values='TOTAL_BOOKINGS', names='GENDER', hole=.3)
-st.plotly_chart(fig, use_container_width=True)
+L.plotly_chart(fig, use_container_width=True)
+R.subheader('Genero - Eventos similares')
+comp_data = utils.load_customers_by_gender(similar_events["EVENT_ID"].astype(str).values.tolist())
+fig = px.pie(comp_data, values='TOTAL_BOOKINGS', names='GENDER', hole=.3)
+R.plotly_chart(fig, use_container_width=True)
 
-# Function to get the total number of bookings by day of the week
-def load_bookings_by_week_day():
-    # Execute a query to extract the data
-    sql = f"""select dayname(paid_at) as dia, count(booking_id) as total_bookings
-                from EVENTS.COMPLETED_BOOKINGS
-                where event_id = {EVENT_ID}
-                group by dia
-                order by total_bookings
-                """
-    cur.execute(sql)
-    # Converting data into a dataframe
-    df = cur.fetch_pandas_all()
-    return df
 
 # Create visualization for COMPRAS POR DIA DE LA SEMANA
-st.subheader('En que dia de la semana compran mas')
-data = load_bookings_by_week_day()
+L.subheader('En que dia de la semana compran mas')
+data = utils.load_bookings_by_week_day([event_id])
 fig = px.bar(data, y="DIA", x="TOTAL_BOOKINGS", orientation='h')
-st.plotly_chart(fig, use_container_width=True)
+L.plotly_chart(fig, use_container_width=True)
+R.subheader('Eventos similares')
+comp_data = utils.load_bookings_by_week_day(similar_events["EVENT_ID"].astype(str).values.tolist())
+fig = px.bar(comp_data, y="DIA", x="TOTAL_BOOKINGS", orientation='h')
+R.plotly_chart(fig, use_container_width=True)
