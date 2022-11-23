@@ -48,7 +48,7 @@ def load_similar_events(event_id, price_threshold):
                 channel_type
             from PROD.EVENTS.EVENTS
             where subcategory = (select subcategory from base_event)
-            and state = (select state from base_event)
+            --and state = (select state from base_event)
             and channel_type = (select channel_type from base_event)
             and average_ticket_price between (select average_ticket_price from base_event) * {1.0 - price_threshold} and (select average_ticket_price from base_event) * {1.0 + price_threshold}
             and tickets_sold_with_cost > 0
