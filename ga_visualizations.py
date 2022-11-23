@@ -3,21 +3,28 @@ import pandas as pd
 import plotly.express as px
 import utils
 
+st.set_page_config(layout="wide")
+
+# Pages
+
+pages = ["Eventos Similares", "Compras", "Demografica", "Fuentes"]
 
 # Sidebar
 st.sidebar.header("Configuración")
+selected_page = st.sidebar.selectbox("Pagina", pages, 0)
 event_id = st.sidebar.text_input("Event ID", "201898")
 event_data = utils.load_event_data(event_id)
 price_threshold = st.sidebar.slider(
     "% rango de precio", min_value=0.0, max_value=1.0, value=0.1)
 
 # Streamlit page title
-st.title('Dashboard Analítica')
-st.subheader(f"EVENTO: {event_data['NAME']}")
+st.title('Boletia Smart Events')
+st.subheader(f"Evento: {event_data['NAME']}")
 
-st.subheader("Eventos similares")
-similar_events = utils.load_similar_events(event_id, price_threshold)
-st.dataframe(similar_events)
+if selected_page == "Eventos Similares":
+    st.subheader("Eventos similares")
+    similar_events = utils.load_similar_events(event_id, price_threshold)
+    st.dataframe(similar_events)
 
 # Columns
 L, R = st.columns(2)

@@ -2,6 +2,7 @@ import snowflake.connector
 import config
 import streamlit as st
 
+
 ctx = snowflake.connector.connect(
     user=config.USER,
     password=config.PASSWORD,

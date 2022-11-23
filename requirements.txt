@@ -1,5 +1,6 @@
 pandas
-plotly
 snowflake-connector-python
 streamlit
 pyarrow<8.1.0,>=8.0.0
+oscrypto
+plotly
